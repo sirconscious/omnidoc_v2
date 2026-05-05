@@ -1,0 +1,100 @@
+============================================================
+ Omnidoc Spring Boot API Endpoints
+ Base URL: http://localhost:8080
+============================================================
+
+------------------------------------------------------------
+ COLLECTIONS  —  /api/collections
+------------------------------------------------------------
+
+GET /api/collections
+  List all collections
+
+GET /api/collections/{id}
+  Get a single collection by ID
+
+POST /api/collections
+  Create a new collection
+  Body: {"name": "...", "description": "..."}
+
+PUT /api/collections/{id}
+  Update a collection
+  Body: {"name": "...", "description": "..."}
+
+DELETE /api/collections/{id}
+  Delete a collection
+
+
+------------------------------------------------------------
+ DOCUMENTS  —  /api/documents
+------------------------------------------------------------
+
+GET /api/documents
+  List all documents
+
+GET /api/documents/{id}
+  Get a single document by ID
+
+GET /api/collections/{collectionId}/documents
+  List all documents in a specific collection
+
+POST /api/collections/{collectionId}/documents
+  Create a document in a collection
+  Body: {"filename": "...", "fileType": "...", "fileSize": ..., "minioPath": "...", "status": "..."}
+
+PUT /api/documents/{id}
+  Update a document
+  Body: {"filename": "...", "fileType": "...", "fileSize": ..., "minioPath": "...", "status": "...", "wordCount": ..., "pageCount": ..., "errorMessage": "..."}
+
+DELETE /api/documents/{id}
+  Delete a document
+
+
+------------------------------------------------------------
+ MINIO FILES  —  /api/files
+------------------------------------------------------------
+
+GET /api/files?prefix=...
+  List files in MinIO bucket (filters by prefix)
+  Example: /api/files?prefix=raw/acf3a192/
+
+POST /api/files/upload
+  Upload a file to MinIO
+  Form-data: file=<file>
+
+GET /api/files/download/{*path}
+  Download a file from MinIO
+  Example: /api/files/download/omnidoc/raw/abc/doc.pdf
+
+DELETE /api/files/{*path}
+  Delete a file from MinIO
+  Example: DELETE /api/files/omnidoc/raw/abc/doc.pdf
+
+
+------------------------------------------------------------
+ QUICK TEST (curl)
+------------------------------------------------------------
+
+# List collections
+curl http://localhost:8080/api/collections
+
+# Create collection
+curl -X POST http://localhost:8080/api/collections \
+  -H "Content-Type: application/json" \
+  -d '{"name":"test","description":"Test collection"}'
+
+# List documents
+curl http://localhost:8080/api/documents
+
+# List files in MinIO
+curl http://localhost:8080/api/files
+
+# Upload file
+curl -X POST http://localhost:8080/api/files/upload \
+  -F "file=@/path/to/file.pdf"
+
+# Download file
+curl http://localhost:8080/api/files/download/omnidoc/raw/abc/file.pdf -o file.pdf
+
+# Delete file
+curl -X DELETE http://localhost:8080/api/files/omnidoc/raw/abc/file.pdf

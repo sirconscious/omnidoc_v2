@@ -1,8 +1,11 @@
 package com.omnidoc.api.modles;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -25,6 +28,10 @@ public class Collection {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "collection", fetch = FetchType.LAZY)
+    private List<Document> documents = new ArrayList<>();
 
     @PreUpdate
     public void preUpdate() {

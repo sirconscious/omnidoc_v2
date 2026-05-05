@@ -7,7 +7,7 @@ load_dotenv()
 MINIO_HOST       = os.getenv("MINIO_HOST")
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
-MINIO_BUCKET     = os.getenv("MINIO_BUCKET", "prism")
+MINIO_BUCKET     = os.getenv("MINIO_BUCKET", "omnidoc")
 
 # PostgreSQL
 POSTGRES_HOST     = os.getenv("POSTGRES_HOST", "localhost")

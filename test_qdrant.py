@@ -3,7 +3,7 @@ from app.indexing.embeddings import embed
 
 client = QdrantClient(host="localhost", port=6333)
 
-query = "Software engineer with experience in Python and machine learning"
+query ="Software engineer with experience in java and springboot"
 
 
 vector = embed(query)
