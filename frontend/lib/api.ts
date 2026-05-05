@@ -132,3 +132,61 @@ export const searchApi = {
     fetch(`${SEARCH}/document/${encodeURIComponent(docId)}`)
       .then(r => r.json()) as Promise<DocumentDetail>,
 };
+
+// ─── Chat ────────────────────────────────────────────────
+export interface ChatSource {
+  filename: string;
+  score: number;
+}
+
+export interface ChatEvent {
+  type: "content" | "done" | "error";
+  text?: string;
+  sources?: ChatSource[];
+  error?: string;
+}
+
+export const chatApi = {
+  stream: (
+    message: string,
+    history: Array<{ role: string; content: string }>,
+    onEvent: (event: ChatEvent) => void,
+    collectionId?: string,
+  ) => {
+    fetch(`${SEARCH.replace("/search", "")}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, history, collection_id: collectionId }),
+    }).then(async (res) => {
+      if (!res.ok || !res.body) {
+        onEvent({ type: "error", error: `HTTP ${res.status}` });
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            try {
+              const event: ChatEvent = JSON.parse(line.slice(6));
+              onEvent(event);
+            } catch {
+              // skip malformed events
+            }
+          }
+        }
+      } catch (err) {
+        onEvent({ type: "error", error: err instanceof Error ? err.message : "Stream error" });
+      }
+    }).catch((err) => {
+      onEvent({ type: "error", error: err.message });
+    });
+  },
+};

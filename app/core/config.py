@@ -24,3 +24,6 @@ ES_PASSWORD = os.getenv("ES_PASSWORD")
 # Qdrant
 QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
 QDRANT_PORT = os.getenv("QDRANT_PORT", "6333")
+
+# Anthropic (RAG Chat)
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")

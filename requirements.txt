@@ -17,3 +17,5 @@ pdf2image
 # Embeddings and vector search
 sentence-transformers
 qdrant-client
+langchain-anthropic
+langchain-core

@@ -7,6 +7,7 @@ import {
   FileText,
   FileArchive,
   Home,
+  MessageSquare,
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,6 +25,7 @@ import ThemeToggle from "@/components/theme-toggle";
 
 const mainItems = [
   { title: "Search", url: "/", icon: Home },
+  { title: "Chat", url: "/chat", icon: MessageSquare },
 ];
 
 const managementItems = [
