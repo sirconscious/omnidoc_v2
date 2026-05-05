@@ -20,7 +20,51 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Pencil, FileText } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Plus, Trash2, Pencil, FileText, Eye, Copy, Check } from "lucide-react";
+
+const PAGE_SIZE = 10;
+
+function FilenamePopover({ name }: { name: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(name);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0">
+          <Eye className="h-3.5 w-3.5" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-96 max-h-80 overflow-auto" align="start">
+        <div className="flex items-start justify-between gap-2">
+          <code className="text-sm break-all">{name}</code>
+          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={handleCopy}>
+            {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -28,6 +72,23 @@ const statusColors: Record<string, string> = {
   processing: "bg-blue-100 text-blue-800",
   error: "bg-red-100 text-red-800",
 };
+
+function buildPagination(current: number, total: number) {
+  if (total <= 1) return [];
+  const pages: (number | "...")[] = [];
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (current > 3) pages.push("...");
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (current < total - 2) pages.push("...");
+    pages.push(total);
+  }
+  return pages;
+}
 
 export default function DocumentsPanel() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -40,6 +101,7 @@ export default function DocumentsPanel() {
     minioPath: "",
     status: "pending",
   });
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     fetchDocuments();
@@ -81,6 +143,7 @@ export default function DocumentsPanel() {
         await documentsApi.create("acf3a192-c113-4ae3-acba-994d300419dd", form);
       }
       setDialogOpen(false);
+      setPage(1);
       fetchDocuments();
     } catch (e) {
       console.error(e);
@@ -91,6 +154,7 @@ export default function DocumentsPanel() {
     if (!confirm("Delete this document?")) return;
     try {
       await documentsApi.delete(id);
+      setPage(1);
       fetchDocuments();
     } catch (e) {
       console.error(e);
@@ -103,6 +167,12 @@ export default function DocumentsPanel() {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
+
+  const totalPages = Math.max(1, Math.ceil(documents.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const start = (safePage - 1) * PAGE_SIZE;
+  const pageData = documents.slice(start, start + PAGE_SIZE);
+  const paginationPages = buildPagination(safePage, totalPages);
 
   if (loading) return <p className="text-muted-foreground">Loading...</p>;
 
@@ -124,50 +194,96 @@ export default function DocumentsPanel() {
       {documents.length === 0 ? (
         <p className="text-muted-foreground text-center py-8">No documents yet.</p>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Filename</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Size</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {documents.map((d) => (
-                <TableRow key={d.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="truncate max-w-[200px]">{d.filename}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="uppercase">{d.fileType}</Badge>
-                  </TableCell>
-                  <TableCell className="text-sm tabular-nums">{formatSize(d.fileSize)}</TableCell>
-                  <TableCell>
-                    <Badge className={statusColors[d.status] || ""}>
-                      {d.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(d)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(d.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
+        <>
+          <p className="text-sm text-muted-foreground">
+            Showing {start + 1}–{Math.min(start + PAGE_SIZE, documents.length)} of {documents.length}
+          </p>
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Filename</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Size</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {pageData.map((d) => (
+                  <TableRow key={d.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span>
+                          {d.filename.length > 20 ? d.filename.slice(0, 20) + "..." : d.filename}
+                        </span>
+                        <FilenamePopover name={d.filename} />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="uppercase">{d.fileType}</Badge>
+                    </TableCell>
+                    <TableCell className="text-sm tabular-nums">{formatSize(d.fileSize)}</TableCell>
+                    <TableCell>
+                      <Badge className={statusColors[d.status] || ""}>
+                        {d.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => openEdit(d)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(d.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); setPage((p) => Math.max(1, p - 1)); }}
+                  />
+                </PaginationItem>
+
+                {paginationPages.map((p, i) =>
+                  p === "..." ? (
+                    <PaginationItem key={`ellipsis-${i}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={p}>
+                      <PaginationLink
+                        href="#"
+                        isActive={p === safePage}
+                        onClick={(e) => { e.preventDefault(); setPage(p); }}
+                      >
+                        {p}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                )}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); setPage((p) => Math.min(totalPages, p + 1)); }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

@@ -3,8 +3,6 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
-  Search,
-  LayoutDashboard,
   FolderOpen,
   FileText,
   FileArchive,
@@ -17,7 +15,6 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -31,8 +28,8 @@ const mainItems = [
 
 const managementItems = [
   { title: "Collections", url: "/dashboard", icon: FolderOpen },
-  { title: "Documents", url: "/dashboard?tab=documents", icon: FileText },
-  { title: "Files", url: "/dashboard?tab=files", icon: FileArchive },
+  { title: "Documents", url: "/dashboard/documents", icon: FileText },
+  { title: "Files", url: "/dashboard/files", icon: FileArchive },
 ];
 
 export function AppSidebar() {
@@ -40,28 +37,11 @@ export function AppSidebar() {
 
   const isActive = (url: string) => {
     if (url === "/") return pathname === "/";
-    if (url === "/dashboard") return pathname.startsWith("/dashboard");
     return pathname === url;
   };
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-                  O
-                </div>
-                <span className="font-semibold">Omnidoc</span>
-              </Link>
-            </SidebarMenuButton>
-            <SidebarTrigger className="ml-auto" />
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
@@ -102,8 +82,9 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Toggle theme">
+          <SidebarMenuItem className="flex gap-1">
+            <SidebarTrigger className="flex-1" />
+            <SidebarMenuButton tooltip="Toggle theme" className="flex-1">
               <ThemeToggle />
             </SidebarMenuButton>
           </SidebarMenuItem>
