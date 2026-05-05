@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, List
 import logging
+import httpx
 
 from app.core.config import QDRANT_HOST, QDRANT_PORT
 from app.indexing.es_client import get_es_client, collection_index_name
@@ -49,13 +50,15 @@ async def keyword_search(
     results = []
     for hit in response["hits"]["hits"]:
         results.append({
-            "filename": hit["_source"].get("filename"),
-            "text": hit["_source"].get("text", "")[:500],
-            "score": hit["_score"],
-            "chunk_index": hit["_source"].get("chunk_index"),
-            "has_table": hit["_source"].get("has_table", False),
+            "doc_id":         hit["_source"].get("doc_id"),
+            "collection_id":  hit["_source"].get("collection_id"),
+            "filename":       hit["_source"].get("filename"),
+            "text":           hit["_source"].get("text", "")[:500],
+            "score":          hit["_score"],
+            "chunk_index":    hit["_source"].get("chunk_index"),
+            "has_table":      hit["_source"].get("has_table", False),
         })
-    
+
     return {"results": results, "total": len(results)}
 
 
@@ -77,15 +80,85 @@ async def semantic_search(
     results = []
     for hit in search_results:
         results.append({
-            "filename": hit.payload.get("filename"),
-            "text": hit.payload.get("text", "")[:500],
-            "score": hit.score,
-            "chunk_index": hit.payload.get("chunk_index"),
+            "doc_id":         hit.payload.get("doc_id"),
+            "collection_id":  hit.payload.get("collection_id"),
+            "filename":       hit.payload.get("filename"),
+            "text":           hit.payload.get("text", "")[:500],
+            "score":          hit.score,
+            "chunk_index":    hit.payload.get("chunk_index"),
         })
-    
+
     return {"results": results, "total": len(results)}
 
 
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/search/document/{doc_id}")
+async def get_document_detail(doc_id: str):
+    """Get full document detail from ES chunks + Spring Boot metadata."""
+    es = get_es_client()
+
+    # Scan all collection indexes for this doc_id
+    all_chunks = []
+    matched_collection_id = None
+
+    # Try the default collection first
+    for suffix in [""]:
+        index = collection_index_name(DEFAULT_COLLECTION_ID)
+        if es.indices.exists(index=index):
+            response = es.search(
+                index=index,
+                query={"match": {"doc_id": doc_id}},
+                size=10000,
+            )
+            if response["hits"]["total"]["value"] > 0:
+                matched_collection_id = DEFAULT_COLLECTION_ID
+                for hit in response["hits"]["hits"]:
+                    all_chunks.append({
+                        "chunk_index": hit["_source"].get("chunk_index", 0),
+                        "text": hit["_source"].get("text", ""),
+                        "has_table": hit["_source"].get("has_table", False),
+                        "source_page": hit["_source"].get("source_page"),
+                        "source_section": hit["_source"].get("source_section"),
+                        "word_count": hit["_source"].get("word_count", 0),
+                    })
+
+    if not all_chunks:
+        raise HTTPException(status_code=404, detail="Document not found in search index")
+
+    # Sort chunks by index
+    all_chunks.sort(key=lambda c: c["chunk_index"])
+
+    full_text = "\n\n".join(c["text"] for c in all_chunks)
+
+    # Fetch metadata from Spring Boot
+    metadata = {}
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"http://localhost:8080/api/documents/{doc_id}",
+                timeout=5.0,
+            )
+            if resp.status_code == 200:
+                metadata = resp.json()
+    except Exception:
+        pass
+
+    return {
+        "doc_id": doc_id,
+        "collection_id": matched_collection_id,
+        "filename": metadata.get("filename"),
+        "file_type": metadata.get("fileType"),
+        "file_size": metadata.get("fileSize"),
+        "minio_path": metadata.get("minioPath"),
+        "status": metadata.get("status"),
+        "word_count": metadata.get("wordCount"),
+        "page_count": metadata.get("pageCount"),
+        "created_at": metadata.get("createdAt"),
+        "chunk_count": len(all_chunks),
+        "full_text": full_text,
+        "chunks": all_chunks,
+    }
