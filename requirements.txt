@@ -5,6 +5,10 @@ python-dotenv
 psycopg2-binary
 minio
 
+# FastAPI
+fastapi
+uvicorn[standard]
+
 # OCR support (optional - for scanned PDFs)
 pytesseract
 Pillow
