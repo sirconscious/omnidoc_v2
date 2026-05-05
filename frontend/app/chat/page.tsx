@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Send, Bot, User, ChevronDown, Loader2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { chatApi, ChatSource } from "@/lib/api";
@@ -103,14 +105,24 @@ export default function ChatPage() {
                   msg.role === "error" ? "border-destructive bg-destructive/10" :
                   ""
                 }`}>
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                    {msg.content || (streaming && i === messages.length - 1 ? (
-                      <span className="inline-flex items-center gap-1 text-muted-foreground">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        thinking
-                      </span>
-                    ) : "")}
-                  </p>
+                  {msg.role === "user" ? (
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                      {msg.content}
+                    </p>
+                  ) : (
+                    <div className="text-sm leading-relaxed prose-sm max-w-none dark:prose-invert">
+                      {msg.content ? (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                          {msg.content}
+                        </ReactMarkdown>
+                      ) : streaming && i === messages.length - 1 ? (
+                        <span className="inline-flex items-center gap-1 text-muted-foreground">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          thinking
+                        </span>
+                      ) : null}
+                    </div>
+                  )}
                 </Card>
                 {msg.sources && msg.sources.length > 0 && (
                   <SourcesList sources={msg.sources} />
@@ -141,6 +153,61 @@ export default function ChatPage() {
     </div>
   );
 }
+
+const markdownComponents = {
+  code: ({ className, children, ...props }: { className?: string; children: React.ReactNode }) => {
+    const match = /language-(\w+)/.exec(className || "");
+    return match ? (
+      <pre className="bg-muted/50 rounded-lg p-3 overflow-x-auto my-2 text-sm">
+        <code className={className} {...props}>{children}</code>
+      </pre>
+    ) : (
+      <code className="bg-muted/50 rounded px-1.5 py-0.5 text-sm font-mono" {...props}>
+        {children}
+      </code>
+    );
+  },
+  h1: ({ children }: { children: React.ReactNode }) => (
+    <h1 className="text-lg font-bold mt-3 mb-1">{children}</h1>
+  ),
+  h2: ({ children }: { children: React.ReactNode }) => (
+    <h2 className="text-base font-semibold mt-3 mb-1">{children}</h2>
+  ),
+  h3: ({ children }: { children: React.ReactNode }) => (
+    <h3 className="text-sm font-semibold mt-2 mb-1">{children}</h3>
+  ),
+  ul: ({ children }: { children: React.ReactNode }) => (
+    <ul className="list-disc ml-5 mt-1 mb-1 space-y-0.5">{children}</ul>
+  ),
+  ol: ({ children }: { children: React.ReactNode }) => (
+    <ol className="list-decimal ml-5 mt-1 mb-1 space-y-0.5">{children}</ol>
+  ),
+  li: ({ children }: { children: React.ReactNode }) => (
+    <li className="text-sm">{children}</li>
+  ),
+  table: ({ children }: { children: React.ReactNode }) => (
+    <div className="overflow-x-auto my-2">
+      <table className="min-w-full text-sm border-collapse border border-border">{children}</table>
+    </div>
+  ),
+  thead: ({ children }: { children: React.ReactNode }) => (
+    <thead className="bg-muted/30">{children}</thead>
+  ),
+  th: ({ children }: { children: React.ReactNode }) => (
+    <th className="border border-border px-3 py-1.5 text-left font-semibold">{children}</th>
+  ),
+  td: ({ children }: { children: React.ReactNode }) => (
+    <td className="border border-border px-3 py-1.5">{children}</td>
+  ),
+  blockquote: ({ children }: { children: React.ReactNode }) => (
+    <blockquote className="border-l-4 border-primary/40 pl-3 py-1 my-2 text-muted-foreground italic">
+      {children}
+    </blockquote>
+  ),
+  p: ({ children }: { children: React.ReactNode }) => (
+    <p className="text-sm leading-relaxed mb-1">{children}</p>
+  ),
+};
 
 function SourcesList({ sources }: { sources: ChatSource[] }) {
   const [expanded, setExpanded] = useState(false);
