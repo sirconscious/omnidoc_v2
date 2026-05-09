@@ -152,6 +152,7 @@ export const searchApi = {
 export interface ChatSource {
   filename: string;
   score: number;
+  doc_id?: string;
 }
 
 export interface ChatEvent {

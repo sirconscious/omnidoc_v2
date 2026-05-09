@@ -11,15 +11,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(main)/layout.js"
     ],
+    "/(main)/chat/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(main)/chat/page.js"
+    ],
     "/(main)/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(main)/page.js"
     ],
-    "/(main)/chat/page": [
+    "/(main)/document/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(main)/chat/page.js"
+      "static/chunks/app/(main)/document/[id]/page.js"
     ]
   }
 }

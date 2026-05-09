@@ -60,12 +60,14 @@ def hybrid_retrieve(query: str, collection_id: str) -> list[dict]:
         docs[key] = {
             "filename": r.payload.get("filename", "unknown"),
             "text": r.payload.get("text", ""),
+            "doc_id": r.payload.get("doc_id"),
         }
     for h in es_hits:
         key = h["_source"].get("filename", "") + "|" + h["_source"].get("text", "")[:80]
         docs[key] = {
             "filename": h["_source"].get("filename", "unknown"),
             "text": h["_source"].get("text", ""),
+            "doc_id": h["_source"].get("doc_id"),
         }
 
     # 4. RRF scoring
@@ -133,7 +135,7 @@ def create_chat_router() -> APIRouter:
 
         collection_id = req.collection_id or DEFAULT_COLLECTION_ID
         chunks = hybrid_retrieve(req.message, collection_id)
-        sources = [{"filename": c["filename"], "score": c["score"]} for c in chunks]
+        sources = [{"filename": c["filename"], "score": c["score"], "doc_id": c.get("doc_id")} for c in chunks]
         context = format_context(chunks)
 
         history = req.history[-MAX_HISTORY:]

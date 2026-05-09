@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Send, Bot, User, ChevronDown, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { chatApi, ChatSource } from "@/lib/api";
@@ -215,11 +216,20 @@ function SourcesList({ sources }: { sources: ChatSource[] }) {
 
   return (
     <div className="mt-1.5 flex items-center gap-1 flex-wrap">
-      {sources.slice(0, expanded ? undefined : 2).map((s, i) => (
-        <span key={i} className="text-[11px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-          {s.filename}
-        </span>
-      ))}
+      {sources.slice(0, expanded ? undefined : 2).map((s, i) => {
+        const content = s.doc_id ? (
+          <Link href={`/document/${s.doc_id}`} className="hover:underline">
+            {s.filename}
+          </Link>
+        ) : (
+          s.filename
+        );
+        return (
+          <span key={i} className="text-[11px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+            {content}
+          </span>
+        );
+      })}
       {!expanded && sources.length > 2 && (
         <button
           className="text-[11px] px-1.5 py-0.5 flex items-center gap-0.5 text-muted-foreground hover:text-foreground"
