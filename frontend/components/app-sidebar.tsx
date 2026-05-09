@@ -8,6 +8,7 @@ import {
   FileArchive,
   Home,
   MessageSquare,
+  Upload,
   LogOut,
   User,
 } from "lucide-react";
@@ -45,6 +46,7 @@ const managementItems = [
   { title: "Collections", url: "/dashboard", icon: FolderOpen },
   { title: "Documents", url: "/dashboard/documents", icon: FileText },
   { title: "Files", url: "/dashboard/files", icon: FileArchive },
+  { title: "Upload", url: "/upload", icon: Upload },
 ];
 
 export function AppSidebar() {

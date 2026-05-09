@@ -9,6 +9,7 @@ from app.indexing.es_client import get_es_client, collection_index_name
 from app.indexing.embeddings import embed
 from app.indexing.qdrant_client import get_qdrant_client
 from app.api.chat_api import create_chat_router
+from app.api.ingest_api import router as ingest_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -174,3 +175,4 @@ async def get_document_detail(doc_id: str, request: Request):
 # ─────────────────────────────────────────────
 
 app.include_router(create_chat_router())
+app.include_router(ingest_router)
