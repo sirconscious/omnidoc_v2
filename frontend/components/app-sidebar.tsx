@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   FolderOpen,
@@ -8,7 +8,20 @@ import {
   FileArchive,
   Home,
   MessageSquare,
+  LogOut,
+  User,
 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { getToken } from "@/lib/auth";
+
+function decodeTokenPayload(token: string): { sub?: string } | null {
+  try {
+    const payload = token.split(".")[1];
+    return JSON.parse(atob(payload));
+  } catch {
+    return null;
+  }
+}
 import {
   Sidebar,
   SidebarContent,
@@ -36,10 +49,21 @@ const managementItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useAuth();
+
+  const token = getToken();
+  const payload = token ? decodeTokenPayload(token) : null;
+  const userEmail = payload?.sub || null;
 
   const isActive = (url: string) => {
     if (url === "/") return pathname === "/";
     return pathname === url;
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
   };
 
   return (
@@ -84,10 +108,21 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          {userEmail && (
+            <SidebarMenuItem>
+              <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground truncate">
+                <User className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{userEmail}</span>
+              </div>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem className="flex gap-1">
             <SidebarTrigger className="flex-1" />
             <SidebarMenuButton tooltip="Toggle theme" className="flex-1">
               <ThemeToggle />
+            </SidebarMenuButton>
+            <SidebarMenuButton tooltip="Sign out" onClick={handleLogout}>
+              <LogOut className="h-4 w-4" />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
       source: "/search/:path*",
       destination: "http://localhost:8000/search/:path*",
     },
+    {
+      source: "/chat",
+      destination: "http://localhost:8000/chat",
+    },
   ],
   turbopack: {
     root: "/home/mehdi/programing/omnidoc/frontend",

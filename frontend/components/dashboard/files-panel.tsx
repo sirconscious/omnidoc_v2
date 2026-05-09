@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { filesApi, type MinioFile } from "@/lib/api";
+import { filesApi, downloadFile, type MinioFile } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -128,8 +128,13 @@ export default function FilesPanel() {
     }
   };
 
-  const handleDownload = (name: string) => {
-    window.open(filesApi.download(name), "_blank");
+  const handleDownload = async (name: string) => {
+    try {
+      const filename = name.split("/").pop() || name;
+      await downloadFile(name, filename);
+    } catch (e) {
+      console.error("Download failed:", e);
+    }
   };
 
   const formatSize = (bytes: number) => {

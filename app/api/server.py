@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, List
 import logging
@@ -98,7 +98,7 @@ async def health_check():
 
 
 @app.get("/search/document/{doc_id}")
-async def get_document_detail(doc_id: str):
+async def get_document_detail(doc_id: str, request: Request):
     """Get full document detail from ES chunks + Spring Boot metadata."""
     es = get_es_client()
 
@@ -135,12 +135,16 @@ async def get_document_detail(doc_id: str):
 
     full_text = "\n\n".join(c["text"] for c in all_chunks)
 
-    # Fetch metadata from Spring Boot
+    # Fetch metadata from Spring Boot (forward auth header)
     metadata = {}
     try:
         async with httpx.AsyncClient() as client:
+            headers = {}
+            if request.headers.get("authorization"):
+                headers["Authorization"] = request.headers["authorization"]
             resp = await client.get(
                 f"http://localhost:8080/api/documents/{doc_id}",
+                headers=headers,
                 timeout=5.0,
             )
             if resp.status_code == 200:

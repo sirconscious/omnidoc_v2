@@ -1,5 +1,7 @@
-const API = "http://localhost:8080/api";
-const SEARCH = "http://localhost:8000/search";
+import { authFetch } from "./auth";
+
+const API = "/api";
+const SEARCH = "/search";
 
 // ─── Collections ───────────────────────────────────────────
 export interface Collection {
@@ -11,22 +13,22 @@ export interface Collection {
 }
 
 export const collectionsApi = {
-  list: () => fetch(`${API}/collections`).then(r => r.json()) as Promise<Collection[]>,
-  get: (id: string) => fetch(`${API}/collections/${id}`).then(r => r.json()) as Promise<Collection>,
+  list: () => authFetch(`${API}/collections`).then(r => r.json()) as Promise<Collection[]>,
+  get: (id: string) => authFetch(`${API}/collections/${id}`).then(r => r.json()) as Promise<Collection>,
   create: (data: { name: string; description?: string }) =>
-    fetch(`${API}/collections`, {
+    authFetch(`${API}/collections`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }).then(r => r.json()),
   update: (id: string, data: { name: string; description?: string }) =>
-    fetch(`${API}/collections/${id}`, {
+    authFetch(`${API}/collections/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }).then(r => r.json()),
   delete: (id: string) =>
-    fetch(`${API}/collections/${id}`, { method: "DELETE" }),
+    authFetch(`${API}/collections/${id}`, { method: "DELETE" }),
 };
 
 // ─── Documents ─────────────────────────────────────────────
@@ -45,24 +47,24 @@ export interface Document {
 }
 
 export const documentsApi = {
-  list: () => fetch(`${API}/documents`).then(r => r.json()) as Promise<Document[]>,
-  get: (id: string) => fetch(`${API}/documents/${id}`).then(r => r.json()) as Promise<Document>,
+  list: () => authFetch(`${API}/documents`).then(r => r.json()) as Promise<Document[]>,
+  get: (id: string) => authFetch(`${API}/documents/${id}`).then(r => r.json()) as Promise<Document>,
   getByCollection: (collectionId: string) =>
-    fetch(`${API}/collections/${collectionId}/documents`).then(r => r.json()) as Promise<Document[]>,
+    authFetch(`${API}/collections/${collectionId}/documents`).then(r => r.json()) as Promise<Document[]>,
   create: (collectionId: string, data: Partial<Document>) =>
-    fetch(`${API}/collections/${collectionId}/documents`, {
+    authFetch(`${API}/collections/${collectionId}/documents`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }).then(r => r.json()),
   update: (id: string, data: Partial<Document>) =>
-    fetch(`${API}/documents/${id}`, {
+    authFetch(`${API}/documents/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }).then(r => r.json()),
   delete: (id: string) =>
-    fetch(`${API}/documents/${id}`, { method: "DELETE" }),
+    authFetch(`${API}/documents/${id}`, { method: "DELETE" }),
 };
 
 // ─── Files (MinIO) ────────────────────────────────────────
@@ -74,18 +76,31 @@ export interface MinioFile {
 
 export const filesApi = {
   list: (prefix = "") =>
-    fetch(`${API}/files${prefix ? `?prefix=${prefix}` : ""}`).then(r => r.json()) as Promise<MinioFile[]>,
-  listRaw: () => fetch(`${API}/files?prefix=raw/`).then(r => r.json()) as Promise<MinioFile[]>,
-  listParsed: () => fetch(`${API}/files?prefix=parsed/`).then(r => r.json()) as Promise<MinioFile[]>,
+    authFetch(`${API}/files${prefix ? `?prefix=${prefix}` : ""}`).then(r => r.json()) as Promise<MinioFile[]>,
+  listRaw: () => authFetch(`${API}/files?prefix=raw/`).then(r => r.json()) as Promise<MinioFile[]>,
+  listParsed: () => authFetch(`${API}/files?prefix=parsed/`).then(r => r.json()) as Promise<MinioFile[]>,
   upload: (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
-    return fetch(`${API}/files/upload`, { method: "POST", body: formData });
+    return authFetch(`${API}/files/upload`, { method: "POST", body: formData });
   },
-  download: (path: string) => `${API}/files/download/${path}`,
   delete: (path: string) =>
-    fetch(`${API}/files/${path}`, { method: "DELETE" }),
+    authFetch(`${API}/files/${path}`, { method: "DELETE" }),
 };
+
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const res = await authFetch(`${API}/files/download/${path}`);
+  if (!res.ok) throw new Error("Download failed");
+  const blob = await res.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(blobUrl);
+}
 
 // ─── Search ───────────────────────────────────────────────
 export interface SearchResult {
@@ -129,7 +144,7 @@ export const searchApi = {
     fetch(`${SEARCH}/semantic?query=${encodeURIComponent(query)}&top_k=${topK}`)
       .then(r => r.json()) as Promise<{ results: SearchResult[]; total: number }>,
   documentDetail: (docId: string) =>
-    fetch(`${SEARCH}/document/${encodeURIComponent(docId)}`)
+    authFetch(`${SEARCH}/document/${encodeURIComponent(docId)}`)
       .then(r => r.json()) as Promise<DocumentDetail>,
 };
 
@@ -153,7 +168,7 @@ export const chatApi = {
     onEvent: (event: ChatEvent) => void,
     collectionId?: string,
   ) => {
-    fetch(`${SEARCH.replace("/search", "")}/chat`, {
+    fetch("http://localhost:8000/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, history, collection_id: collectionId }),
