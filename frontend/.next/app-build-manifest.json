@@ -16,15 +16,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(main)/page.js"
     ],
+    "/(main)/document/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(main)/document/[id]/page.js"
+    ],
+    "/(main)/chat/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(main)/chat/page.js"
+    ],
+    "/(main)/dashboard/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(main)/dashboard/page.js"
+    ],
     "/(main)/upload/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(main)/upload/page.js"
-    ],
-    "/(main)/dashboard/documents/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(main)/dashboard/documents/page.js"
     ]
   }
 }

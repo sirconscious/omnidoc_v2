@@ -171,10 +171,12 @@ export default function DocumentDetailPage() {
   }
 
   const handleDownload = async () => {
-    if (!doc?.minio_path || downloading) return;
+    if (!doc || downloading) return;
     setDownloading(true);
     try {
-      const path = doc.minio_path.replace(/^omnidoc\//, "");
+      const path = doc.minio_path
+        ? doc.minio_path.replace(/^omnidoc\//, "")
+        : `raw/${doc.collection_id}/${doc.doc_id}/${doc.filename}`;
       await downloadFile(path, doc.filename);
     } catch (e) {
       console.error("Download failed:", e);
@@ -208,12 +210,10 @@ export default function DocumentDetailPage() {
                 <span>{doc.file_type?.toUpperCase()}</span>
               </CardDescription>
             </div>
-            {doc.minio_path && (
-              <Button className="shrink-0" onClick={handleDownload} disabled={downloading}>
-                <Download className="h-4 w-4 mr-2" />
-                {downloading ? "Downloading..." : "Download"}
-              </Button>
-            )}
+            <Button className="shrink-0" onClick={handleDownload} disabled={downloading}>
+              <Download className="h-4 w-4 mr-2" />
+              {downloading ? "Downloading..." : "Download"}
+            </Button>
           </div>
         </CardHeader>
         <CardContent>

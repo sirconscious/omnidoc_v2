@@ -15,7 +15,7 @@ from app.parsers.pdf_parser import parse_pdf
 from app.parsers.csv_parser import parse_csv
 from app.parsers.docx_parser import parse_docx
 from app.storage.minio_client import upload_file as minio_upload
-from app.models.document import insert_document, update_status, get_document, get_document_by_filename
+from app.models.document import insert_document, update_status, get_document, get_document_by_filename, update_document_minio_path
 from app.indexing.es_indexer import index_document_chunks
 from app.indexing.qdrant_indexer import index_chunks as qdrant_index_chunks
 
@@ -195,7 +195,8 @@ def run_pipeline(file_path: Path, filename: str, collection_id: str, db_id: int)
 
         file_bytes = file_path.read_bytes()
         minio_key = f"raw/{collection_id}/{db_id}/{filename}"
-        minio_upload(file_bytes, minio_key, mime_type)
+        minio_path = minio_upload(file_bytes, minio_key, mime_type)
+        update_document_minio_path(db_id, minio_path)
 
         raw_text, extra_meta, parser_chunks = extract_text(file_path, file_type)
 

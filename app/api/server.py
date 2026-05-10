@@ -150,8 +150,10 @@ async def get_document_detail(doc_id: str, request: Request):
             )
             if resp.status_code == 200:
                 metadata = resp.json()
-    except Exception:
-        pass
+            else:
+                logger.warning("Spring Boot returned %s for document %s", resp.status_code, doc_id)
+    except Exception as exc:
+        logger.warning("Spring Boot metadata fetch failed for %s: %s", doc_id, exc)
 
     return {
         "doc_id": doc_id,
