@@ -1,8 +1,10 @@
 package com.omnidoc.api.modles;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +13,8 @@ import java.util.UUID;
 @Data
 @Entity
 @Table(name = "collections")
-public class Collection {
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class Collection implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

@@ -1,15 +1,17 @@
 package com.omnidoc.api.modles;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
 @Entity
 @Table(name = "documents")
-public class Document {
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class Document implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
