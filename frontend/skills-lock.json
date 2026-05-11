@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "landing-page-design": {
+      "source": "inference-sh-skills/skills",
+      "sourceType": "github",
+      "skillPath": "guides/design/landing-page-design/SKILL.md",
+      "computedHash": "8343dbd3e73e0a87a1804e60abda2e2b7433d989c63073fcc1f8db6b040c8003"
+    }
+  }
+}

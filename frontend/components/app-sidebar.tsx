@@ -108,23 +108,30 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-border/50 p-2">
         <SidebarMenu>
           {userEmail && (
             <SidebarMenuItem>
-              <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground truncate">
+              <div className="flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground truncate">
                 <User className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{userEmail}</span>
+                <span className="truncate group-data-[collapsible=icon]:hidden">{userEmail}</span>
               </div>
             </SidebarMenuItem>
           )}
-          <SidebarMenuItem className="flex gap-1">
-            <SidebarTrigger className="flex-1" />
-            <SidebarMenuButton tooltip="Toggle theme" className="flex-1">
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Toggle theme" asChild>
               <ThemeToggle />
             </SidebarMenuButton>
-            <SidebarMenuButton tooltip="Sign out" onClick={handleLogout}>
+          </SidebarMenuItem>
+          <SidebarMenuItem className="flex gap-1">
+            <SidebarTrigger className="h-9 w-9 border border-border bg-background" />
+            <SidebarMenuButton 
+              tooltip="Sign out" 
+              onClick={handleLogout}
+              className="h-9 flex-1 bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+            >
               <LogOut className="h-4 w-4" />
+              <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
