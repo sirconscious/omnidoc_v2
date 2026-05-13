@@ -8,7 +8,6 @@ export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  // Avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -17,20 +16,16 @@ export default function ThemeToggle() {
     return <div className="size-4" />;
   }
 
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
-
   return (
     <div 
-      className="flex items-center gap-2 cursor-pointer w-full" 
-      onClick={toggleTheme}
+      className="flex items-center gap-3 w-full" 
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       role="button"
       aria-label="Toggle theme"
     >
-      <Sun className="h-4 w-4 transition-all dark:hidden text-foreground" />
-      <Moon className="h-4 w-4 transition-all hidden dark:block text-foreground" />
-      <span className="truncate group-data-[collapsible=icon]:hidden">
+      <Sun className="size-4 shrink-0 dark:hidden" />
+      <Moon className="size-4 shrink-0 hidden dark:block" />
+      <span className="truncate group-data-[collapsible=icon]:hidden font-medium">
         {theme === "dark" ? "Light Mode" : "Dark Mode"}
       </span>
     </div>

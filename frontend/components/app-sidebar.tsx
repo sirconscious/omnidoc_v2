@@ -10,26 +10,17 @@ import {
   MessageSquare,
   Upload,
   LogOut,
-  User,
+  Command,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { getToken } from "@/lib/auth";
 
-function decodeTokenPayload(token: string): { sub?: string } | null {
-  try {
-    const payload = token.split(".")[1];
-    return JSON.parse(atob(payload));
-  } catch {
-    return null;
-  }
-}
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -37,12 +28,9 @@ import {
 } from "@/components/ui/sidebar";
 import ThemeToggle from "@/components/theme-toggle";
 
-const mainItems = [
-  { title: "Search", url: "/", icon: Home },
+const items = [
+  { title: "Home", url: "/", icon: Home },
   { title: "Chat", url: "/chat", icon: MessageSquare },
-];
-
-const managementItems = [
   { title: "Collections", url: "/dashboard", icon: FolderOpen },
   { title: "Documents", url: "/dashboard/documents", icon: FileText },
   { title: "Files", url: "/dashboard/files", icon: FileArchive },
@@ -53,10 +41,6 @@ export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
-
-  const token = getToken();
-  const payload = token ? decodeTokenPayload(token) : null;
-  const userEmail = payload?.sub || null;
 
   const isActive = (url: string) => {
     if (url === "/") return pathname === "/";
@@ -69,36 +53,29 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="border-r border-border/40">
+      <SidebarHeader className="h-14 flex items-center px-4">
+        <div className="flex items-center gap-3">
+          <Command className="size-5 shrink-0" />
+          <span className="font-semibold tracking-tight group-data-[collapsible=icon]:hidden">OmniDoc</span>
+        </div>
+      </SidebarHeader>
+
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainItems.map((item) => (
+              {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={isActive(item.url)} 
+                    tooltip={item.title}
+                    className="h-9 transition-colors data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
+                  >
                     <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Management</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {managementItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
+                      <item.icon className="size-4 shrink-0" />
+                      <span className="font-medium">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -108,31 +85,25 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border/50 p-2">
+      <SidebarFooter className="p-2 pt-0">
         <SidebarMenu>
-          {userEmail && (
-            <SidebarMenuItem>
-              <div className="flex items-center gap-2 px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground truncate">
-                <User className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate group-data-[collapsible=icon]:hidden">{userEmail}</span>
-              </div>
-            </SidebarMenuItem>
-          )}
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Toggle theme" asChild>
+            <SidebarMenuButton tooltip="Toggle theme" asChild className="h-9">
               <ThemeToggle />
             </SidebarMenuButton>
           </SidebarMenuItem>
-          <SidebarMenuItem className="flex gap-1">
-            <SidebarTrigger className="h-9 w-9 border border-border bg-background" />
+          <SidebarMenuItem>
             <SidebarMenuButton 
               tooltip="Sign out" 
               onClick={handleLogout}
-              className="h-9 flex-1 bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+              className="h-9 text-muted-foreground hover:text-destructive transition-colors"
             >
-              <LogOut className="h-4 w-4" />
-              <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
+              <LogOut className="size-4 shrink-0" />
+              <span className="font-medium group-data-[collapsible=icon]:hidden">Sign Out</span>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem className="mt-1 pt-1 border-t border-border/40">
+            <SidebarTrigger className="size-8 mx-auto hover:bg-accent transition-colors" />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
