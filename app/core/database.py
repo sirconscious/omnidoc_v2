@@ -1,27 +1,32 @@
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import pyodbc
 from app.core.config import (
-    POSTGRES_HOST, POSTGRES_PORT,
-    POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+    SQLSERVER_HOST, SQLSERVER_PORT,
+    SQLSERVER_USER, SQLSERVER_PASSWORD,
+    SQLSERVER_DB, SQLSERVER_DRIVER
 )
 
 def get_connection():
-    return psycopg2.connect(
-        host=POSTGRES_HOST,
-        port=POSTGRES_PORT,
-        user=POSTGRES_USER,
-        password=POSTGRES_PASSWORD,
-        dbname=POSTGRES_DB
+    conn_str = (
+        f"DRIVER={{{SQLSERVER_DRIVER}}};"
+        f"SERVER={SQLSERVER_HOST},{SQLSERVER_PORT};"
+        f"DATABASE={SQLSERVER_DB};"
+        f"UID={SQLSERVER_USER};"
+        f"PWD={SQLSERVER_PASSWORD};"
+        f"TrustServerCertificate=yes;"
     )
+    return pyodbc.connect(conn_str)
 
 def execute_query(query: str, params=None, fetch=False):
     conn = get_connection()
     try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(query, params)
+        cursor = conn.cursor()
+        cursor.execute(query, params or [])
+        if fetch:
+            columns = [col[0] for col in cursor.description]
+            rows = cursor.fetchall()
             conn.commit()
-            if fetch:
-                return cur.fetchall()
+            return [dict(zip(columns, row)) for row in rows]
+        else:
+            conn.commit()
     finally:
         conn.close()
-

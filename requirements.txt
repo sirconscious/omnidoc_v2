@@ -2,7 +2,7 @@
 pdfplumber
 python-docx
 python-dotenv
-psycopg2-binary
+pyodbc
 minio
 
 # FastAPI

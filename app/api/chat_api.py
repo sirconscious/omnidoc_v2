@@ -60,14 +60,14 @@ def hybrid_retrieve(query: str, collection_id: str) -> list[dict]:
         docs[key] = {
             "filename": r.payload.get("filename", "unknown"),
             "text": r.payload.get("text", ""),
-            "doc_id": r.payload.get("doc_id"),
+            "doc_id": r.payload.get("doc_id", "").lower(),
         }
     for h in es_hits:
         key = h["_source"].get("filename", "") + "|" + h["_source"].get("text", "")[:80]
         docs[key] = {
             "filename": h["_source"].get("filename", "unknown"),
             "text": h["_source"].get("text", ""),
-            "doc_id": h["_source"].get("doc_id"),
+            "doc_id": h["_source"].get("doc_id", "").lower(),
         }
 
     # 4. RRF scoring

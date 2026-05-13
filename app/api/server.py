@@ -52,7 +52,7 @@ async def keyword_search(
     results = []
     for hit in response["hits"]["hits"]:
         results.append({
-            "doc_id":         hit["_source"].get("doc_id"),
+            "doc_id":         hit["_source"].get("doc_id", "").lower(),
             "collection_id":  hit["_source"].get("collection_id"),
             "filename":       hit["_source"].get("filename"),
             "text":           hit["_source"].get("text", "")[:500],
@@ -82,7 +82,7 @@ async def semantic_search(
     results = []
     for hit in search_results:
         results.append({
-            "doc_id":         hit.payload.get("doc_id"),
+            "doc_id":         hit.payload.get("doc_id", "").lower(),
             "collection_id":  hit.payload.get("collection_id"),
             "filename":       hit.payload.get("filename"),
             "text":           hit.payload.get("text", "")[:500],
@@ -113,7 +113,7 @@ async def get_document_detail(doc_id: str, request: Request):
         if es.indices.exists(index=index):
             response = es.search(
                 index=index,
-                query={"match": {"doc_id": doc_id}},
+                query={"terms": {"doc_id": [doc_id.lower(), doc_id.upper()]}},
                 size=10000,
             )
             if response["hits"]["total"]["value"] > 0:

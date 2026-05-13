@@ -4,9 +4,6 @@ import com.omnidoc.api.modles.Collection;
 import com.omnidoc.api.modles.Document;
 import com.omnidoc.api.repositories.DocumentRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,31 +16,25 @@ public class DocumentService {
     private final DocumentRepository documentRepository;
     private final CollectionService collectionService;
 
-    @Cacheable(value = "documents")
     public List<Document> findAll() {
         return documentRepository.findAll();
     }
 
-    @Cacheable(value = "documents:collection", key = "#collectionId")
     public List<Document> findByCollection(UUID collectionId) {
         return documentRepository.findByCollectionId(collectionId);
     }
 
-    @Cacheable(value = "documents", key = "#id")
     public Document findById(UUID id) {
         return documentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Document not found: " + id));
     }
 
-    @CacheEvict(value = {"documents", "documents:collection"}, allEntries = true)
     public Document create(UUID collectionId, Document document) {
         Collection collection = collectionService.findById(collectionId);
         document.setCollection(collection);
         return documentRepository.save(document);
     }
 
-    @CachePut(value = "documents", key = "#id")
-    @CacheEvict(value = "documents:collection", allEntries = true)
     public Document update(UUID id, Document updated) {
         Document existing = findById(id);
         existing.setFilename(updated.getFilename());
@@ -57,7 +48,6 @@ public class DocumentService {
         return documentRepository.save(existing);
     }
 
-    @CacheEvict(value = {"documents", "documents:collection"}, allEntries = true)
     public void delete(UUID id) {
         documentRepository.deleteById(id);
     }

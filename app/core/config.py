@@ -9,12 +9,13 @@ MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
 MINIO_BUCKET     = os.getenv("MINIO_BUCKET", "omnidoc")
 
-# PostgreSQL
-POSTGRES_HOST     = os.getenv("POSTGRES_HOST", "localhost")
-POSTGRES_PORT     = os.getenv("POSTGRES_PORT", "5432")
-POSTGRES_USER     = os.getenv("POSTGRES_USER")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-POSTGRES_DB       = os.getenv("POSTGRES_DB")
+# SQL Server
+SQLSERVER_HOST     = os.getenv("SQLSERVER_HOST", "localhost")
+SQLSERVER_PORT     = os.getenv("SQLSERVER_PORT", "1433")
+SQLSERVER_USER     = os.getenv("SQLSERVER_USER")
+SQLSERVER_PASSWORD = os.getenv("SQLSERVER_PASSWORD")
+SQLSERVER_DB       = os.getenv("SQLSERVER_DB")
+SQLSERVER_DRIVER   = os.getenv("SQLSERVER_DRIVER", "ODBC Driver 18 for SQL Server")
 
 # Elasticsearch
 ES_HOST     = os.getenv("ES_HOST", "https://localhost:9200")

@@ -47,7 +47,7 @@ public class Document implements Serializable {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "collection_id", nullable = false)
     private Collection collection;
 
