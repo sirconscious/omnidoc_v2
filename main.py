@@ -20,7 +20,7 @@ except ImportError:
     HAS_PDF = False
 
 from app.storage.minio_client import upload_file as minio_upload
-from app.models.document    import insert_document, update_status, get_document_by_filename
+from app.models.document    import insert_document, update_status, update_document_metadata, get_document_by_filename
 from app.indexing.es_indexer import index_document_chunks
 from app.indexing.qdrant_indexer import index_chunks as qdrant_index_chunks
 
@@ -312,6 +312,12 @@ def ingest(file_path_str: str) -> str:
             extra_meta = extra_meta,
             file_path  = file_path,
             parser_chunks = parser_chunks,
+        )
+
+        update_document_metadata(
+            db_id,
+            word_count=doc_json["metadata"].get("word_count"),
+            page_count=doc_json["metadata"].get("page_count"),
         )
         
         logger.info("[4/5] Uploading parsed JSON → MinIO ...")

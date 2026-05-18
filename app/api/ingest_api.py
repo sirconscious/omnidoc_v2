@@ -15,7 +15,7 @@ from app.parsers.pdf_parser import parse_pdf
 from app.parsers.csv_parser import parse_csv
 from app.parsers.docx_parser import parse_docx
 from app.storage.minio_client import upload_file as minio_upload
-from app.models.document import insert_document, update_status, get_document, get_document_by_filename, update_document_minio_path
+from app.models.document import insert_document, update_status, update_document_metadata, get_document, get_document_by_filename, update_document_minio_path
 from app.indexing.es_indexer import index_document_chunks
 from app.indexing.qdrant_indexer import index_chunks as qdrant_index_chunks
 
@@ -204,6 +204,12 @@ def run_pipeline(file_path: Path, filename: str, collection_id: str, db_id: int)
             doc_id=str(db_id), filename=filename, file_type=file_type,
             raw_text=raw_text, extra_meta=extra_meta,
             file_path=file_path, parser_chunks=parser_chunks,
+        )
+
+        update_document_metadata(
+            db_id,
+            word_count=doc_json["metadata"].get("word_count"),
+            page_count=doc_json["metadata"].get("page_count"),
         )
 
         json_bytes = json.dumps(doc_json, ensure_ascii=False, indent=2).encode("utf-8")
