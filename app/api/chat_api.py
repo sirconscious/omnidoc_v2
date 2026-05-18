@@ -2,11 +2,13 @@
 RAG Chat API — mirrors rag/agent.py behavior as a streaming FastAPI router.
 """
 
+import asyncio
 import json
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+import httpx
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -28,6 +30,8 @@ MAX_HISTORY = 10
 
 DEFAULT_COLLECTION_ID = "acf3a192-c113-4ae3-acba-994d300419dd"
 COLLECTION_NAME = "documents"
+
+SPRING_BOOT_URL = "http://localhost:8080/api/chat"
 
 
 def hybrid_retrieve(query: str, collection_id: str) -> list[dict]:
@@ -123,16 +127,46 @@ class ChatRequest(BaseModel):
     message: str
     history: list[dict] = []
     collection_id: Optional[str] = None
+    session_id: Optional[str] = None
+
+
+async def _save_messages_to_spring(
+    auth_header: str | None,
+    session_id: str,
+    user_message: str,
+    assistant_content: str,
+    assistant_sources: list[dict],
+):
+    """Fire-and-forget: save user message + assistant response to Spring Boot."""
+    headers = {"Content-Type": "application/json"}
+    if auth_header:
+        headers["Authorization"] = auth_header
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            await client.post(
+                f"{SPRING_BOOT_URL}/sessions/{session_id}/messages",
+                json={"role": "user", "content": user_message},
+                headers=headers,
+            )
+            await client.post(
+                f"{SPRING_BOOT_URL}/sessions/{session_id}/messages",
+                json={"role": "assistant", "content": assistant_content, "sources": json.dumps(assistant_sources)},
+                headers=headers,
+            )
+    except Exception as e:
+        logger.warning("Failed to save messages to Spring Boot: %s", e)
 
 
 def create_chat_router() -> APIRouter:
     router = APIRouter()
 
     @router.post("/chat")
-    async def chat(req: ChatRequest):
+    async def chat(req: ChatRequest, request: Request):
         if not ANTHROPIC_API_KEY:
             raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY not configured")
 
+        auth_header = request.headers.get("authorization")
         collection_id = req.collection_id or DEFAULT_COLLECTION_ID
         chunks = hybrid_retrieve(req.message, collection_id)
         sources = [{"filename": c["filename"], "score": c["score"], "doc_id": c.get("doc_id")} for c in chunks]
@@ -147,12 +181,14 @@ def create_chat_router() -> APIRouter:
         ]
 
         async def event_stream():
+            full_response = ""
             try:
                 async for token in chain.astream({
                     "context": context,
                     "chat_history": chat_history,
                     "question": req.message,
                 }):
+                    full_response += token
                     yield f"data: {json.dumps({'type': 'content', 'text': token})}\n\n"
             except Exception as e:
                 logger.error(f"Chat stream error: {e}")
@@ -160,6 +196,17 @@ def create_chat_router() -> APIRouter:
                 return
 
             yield f"data: {json.dumps({'type': 'done', 'sources': sources})}\n\n"
+
+            if req.session_id:
+                asyncio.create_task(
+                    _save_messages_to_spring(
+                        auth_header=auth_header,
+                        session_id=req.session_id,
+                        user_message=req.message,
+                        assistant_content=full_response,
+                        assistant_sources=sources,
+                    )
+                )
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")
 

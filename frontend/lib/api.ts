@@ -1,4 +1,4 @@
-import { authFetch } from "./auth";
+import { authFetch, getToken } from "./auth";
 
 const API = "/api";
 const SEARCH = "/search";
@@ -148,6 +148,51 @@ export const searchApi = {
       .then(r => r.json()) as Promise<DocumentDetail>,
 };
 
+// ─── Chat Sessions ────────────────────────────────────────
+export interface ChatSession {
+  id: string;
+  title: string | null;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+  lastMessage?: { role: string; content: string };
+}
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  sources: string | null;
+  createdAt: string;
+}
+
+export interface ChatSessionDetail {
+  id: string;
+  title: string | null;
+  createdAt: string;
+  updatedAt: string;
+  messages: ChatMessage[];
+}
+
+export const chatSessionsApi = {
+  list: () => authFetch(`${API}/chat/sessions`).then(r => r.json()) as Promise<ChatSession[]>,
+  get: (id: string) => authFetch(`${API}/chat/sessions/${id}`).then(r => r.json()) as Promise<ChatSessionDetail>,
+  create: (title?: string) =>
+    authFetch(`${API}/chat/sessions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(title ? { title } : {}),
+    }).then(r => r.json()) as Promise<ChatSession>,
+  update: (id: string, title: string) =>
+    authFetch(`${API}/chat/sessions/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    }).then(r => r.json()) as Promise<ChatSession>,
+  delete: (id: string) =>
+    authFetch(`${API}/chat/sessions/${id}`, { method: "DELETE" }),
+};
+
 // ─── Chat ────────────────────────────────────────────────
 export interface ChatSource {
   filename: string;
@@ -168,11 +213,21 @@ export const chatApi = {
     history: Array<{ role: string; content: string }>,
     onEvent: (event: ChatEvent) => void,
     collectionId?: string,
+    sessionId?: string,
   ) => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const token = getToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const body: Record<string, unknown> = { message, history, collection_id: collectionId };
+    if (sessionId) body.session_id = sessionId;
+
     fetch("http://localhost:8000/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, history, collection_id: collectionId }),
+      headers,
+      body: JSON.stringify(body),
     }).then(async (res) => {
       if (!res.ok || !res.body) {
         onEvent({ type: "error", error: `HTTP ${res.status}` });
